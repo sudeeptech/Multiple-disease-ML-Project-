@@ -27,7 +27,7 @@ parkinsons_model = load_model("parkinsons_model.sav")
 # Sidebar navigation
 with st.sidebar:
     selected = option_menu(
-        'Multiple Disease Prediction System',
+        'Multiple Disease Prediction System using Machine Learning',
         ['Diabetes Prediction', 'Heart Disease Prediction', 'Parkinsons Prediction'],
         menu_icon='hospital-fill',
         icons=['activity', 'heart', 'person'],
@@ -141,3 +141,4 @@ elif selected == "Parkinsons Prediction":
             parkinsons_diagnosis = '⚠️ Please enter valid numeric values for all fields.'
 
     st.success(parkinsons_diagnosis)
+
