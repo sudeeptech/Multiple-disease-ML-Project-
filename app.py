@@ -1,144 +1,104 @@
-import os
-import pickle
 import streamlit as st
-from streamlit_option_menu import option_menu
+import pandas as pd
+import numpy as np
+import joblib
+from sklearn.ensemble import RandomForestClassifier
+import matplotlib.pyplot as plt
+import seaborn as sns
+import plotly.express as px
 
-# Set page configuration
-st.set_page_config(page_title="Health Assistant Using Machine Leaning",
-                   layout="wide",
-                   page_icon="🧑‍⚕️")
+# Load ML models
+diabetes_model = joblib.load("diabetes_model.sav")
+heart_model = joblib.load("heart_disease_model.sav")
+parkinsons_model = joblib.load("parkinsons_model.sav")
 
-# Define model paths (relative to the Streamlit app)
-MODEL_DIR = os.path.join(os.path.dirname(__file__), "saved_models")
+st.title("Health Prediction App")
 
-# Load saved models safely
-@st.cache_resource
-def load_model(model_name):
-    model_path = os.path.join(MODEL_DIR, model_name)
-    with open(model_path, "rb") as file:
-        model = pickle.load(file)
-    return model
+# Sidebar for model selection
+model_choice = st.sidebar.selectbox("Choose a Prediction Model",
+                                    ("Diabetes", "Heart Disease", "Parkinsons"))
 
-# Load models
-diabetes_model = load_model("diabetes_model.sav")
-heart_disease_model = load_model("heart_disease_model.sav")
-parkinsons_model = load_model("parkinsons_model.sav")
+def predict_diabetes(input_data):
+    input_array = np.array(input_data).reshape(1, -1)
+    prediction = diabetes_model.predict(input_array)
+    return "Diabetic" if prediction[0]==1 else "Not Diabetic"
 
-# Sidebar navigation
-with st.sidebar:
-    selected = option_menu(
-        'Multiple Disease Prediction System using Machine Learning',
-        ['Diabetes Prediction', 'Heart Disease Prediction', 'Parkinsons Prediction'],
-        menu_icon='hospital-fill',
-        icons=['activity', 'heart', 'person'],
-        default_index=0
-    )
+def predict_heart(input_data):
+    input_array = np.array(input_data).reshape(1, -1)
+    prediction = heart_model.predict(input_array)
+    return "Heart Disease" if prediction[0]==1 else "No Heart Disease"
 
-# Diabetes Prediction Page
-if selected == 'Diabetes Prediction':
-    st.title('Diabetes Prediction using ML')
+def predict_parkinsons(input_data):
+    input_array = np.array(input_data).reshape(1, -1)
+    prediction = parkinsons_model.predict(input_array)
+    return "Parkinsons" if prediction[0]==1 else "No Parkinsons"
 
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        Pregnancies = st.text_input('Number of Pregnancies')
-    with col2:
-        Glucose = st.text_input('Glucose Level')
-    with col3:
-        BloodPressure = st.text_input('Blood Pressure value')
-    with col1:
-        SkinThickness = st.text_input('Skin Thickness value')
-    with col2:
-        Insulin = st.text_input('Insulin Level')
-    with col3:
-        BMI = st.text_input('BMI value')
-    with col1:
-        DiabetesPedigreeFunction = st.text_input('Diabetes Pedigree Function value')
-    with col2:
-        Age = st.text_input('Age of the Person')
+if model_choice == "Diabetes":
+    st.header("Diabetes Prediction")
+    pregnancies = st.number_input("Number of Pregnancies", 0, 20)
+    glucose = st.number_input("Glucose Level", 0, 200)
+    bp = st.number_input("Blood Pressure", 0, 140)
+    skin_thickness = st.number_input("Skin Thickness", 0, 100)
+    insulin = st.number_input("Insulin Level", 0, 900)
+    bmi = st.number_input("BMI", 0.0, 70.0)
+    diabetes_pedigree = st.number_input("Diabetes Pedigree Function", 0.0, 2.5)
+    age = st.number_input("Age", 0, 120)
 
-    diab_diagnosis = ''
-    if st.button('Diabetes Test Result'):
-        try:
-            user_input = [float(x) for x in [Pregnancies, Glucose, BloodPressure,
-                                             SkinThickness, Insulin, BMI,
-                                             DiabetesPedigreeFunction, Age]]
-            diab_prediction = diabetes_model.predict([user_input])
-            diab_diagnosis = 'The person is diabetic' if diab_prediction[0] == 1 else 'The person is not diabetic'
-        except:
-            diab_diagnosis = '⚠️ Please enter valid numeric values for all fields.'
+    if st.button("Predict"):
+        result = predict_diabetes([pregnancies, glucose, bp, skin_thickness,
+                                   insulin, bmi, diabetes_pedigree, age])
+        st.success(f"Prediction: {result}")
 
-    st.success(diab_diagnosis)
+elif model_choice == "Heart Disease":
+    st.header("Heart Disease Prediction")
+    # Example input fields (customize as per your model)
+    age = st.number_input("Age", 0, 120)
+    sex = st.number_input("Sex (1=Male, 0=Female)", 0, 1)
+    cp = st.number_input("Chest Pain Type (0-3)", 0, 3)
+    trestbps = st.number_input("Resting Blood Pressure", 0, 200)
+    chol = st.number_input("Serum Cholesterol", 0, 600)
+    fbs = st.number_input("Fasting Blood Sugar > 120 mg/dl (1=True, 0=False)", 0, 1)
+    restecg = st.number_input("Resting ECG (0-2)", 0, 2)
+    thalach = st.number_input("Max Heart Rate Achieved", 0, 250)
+    exang = st.number_input("Exercise Induced Angina (1=Yes, 0=No)", 0, 1)
+    oldpeak = st.number_input("Oldpeak", 0.0, 10.0)
+    slope = st.number_input("Slope of Peak Exercise ST segment (0-2)", 0, 2)
+    ca = st.number_input("Number of Major Vessels (0-3)", 0, 3)
+    thal = st.number_input("Thalassemia (1-3)", 0, 3)
 
-# Heart Disease Prediction Page
-elif selected == 'Heart Disease Prediction':
-    st.title('Heart Disease Prediction using ML')
+    if st.button("Predict Heart Disease"):
+        result = predict_heart([age, sex, cp, trestbps, chol, fbs, restecg,
+                                thalach, exang, oldpeak, slope, ca, thal])
+        st.success(f"Prediction: {result}")
 
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        age = st.text_input('Age')
-    with col2:
-        sex = st.text_input('Sex')
-    with col3:
-        cp = st.text_input('Chest Pain types')
-    with col1:
-        trestbps = st.text_input('Resting Blood Pressure')
-    with col2:
-        chol = st.text_input('Serum Cholestoral in mg/dl')
-    with col3:
-        fbs = st.text_input('Fasting Blood Sugar > 120 mg/dl')
-    with col1:
-        restecg = st.text_input('Resting Electrocardiographic results')
-    with col2:
-        thalach = st.text_input('Maximum Heart Rate achieved')
-    with col3:
-        exang = st.text_input('Exercise Induced Angina')
-    with col1:
-        oldpeak = st.text_input('ST depression induced by exercise')
-    with col2:
-        slope = st.text_input('Slope of the peak exercise ST segment')
-    with col3:
-        ca = st.text_input('Major vessels colored by flourosopy')
-    with col1:
-        thal = st.text_input('thal: 0 = normal; 1 = fixed defect; 2 = reversable defect')
+elif model_choice == "Parkinsons":
+    st.header("Parkinsons Prediction")
+    # Example input fields (customize as per your model)
+    fo = st.number_input("MDVP:Fo(Hz)", 0.0, 500.0)
+    fhi = st.number_input("MDVP:Fhi(Hz)", 0.0, 500.0)
+    flo = st.number_input("MDVP:Flo(Hz)", 0.0, 500.0)
+    Jitter_percent = st.number_input("Jitter (%)", 0.0, 1.0)
+    Jitter_Abs = st.number_input("Jitter(Abs)", 0.0, 1.0)
+    RAP = st.number_input("RAP", 0.0, 1.0)
+    PPQ = st.number_input("PPQ", 0.0, 1.0)
+    DDP = st.number_input("DDP", 0.0, 1.0)
+    Shimmer = st.number_input("Shimmer", 0.0, 1.0)
+    Shimmer_dB = st.number_input("Shimmer(dB)", 0.0, 2.0)
+    APQ3 = st.number_input("APQ3", 0.0, 1.0)
+    APQ5 = st.number_input("APQ5", 0.0, 1.0)
+    APQ = st.number_input("APQ", 0.0, 1.0)
+    DDA = st.number_input("DDA", 0.0, 1.0)
+    NHR = st.number_input("NHR", 0.0, 1.0)
+    HNR = st.number_input("HNR", 0.0, 50.0)
+    RPDE = st.number_input("RPDE", 0.0, 1.0)
+    DFA = st.number_input("DFA", 0.0, 2.0)
+    spread1 = st.number_input("spread1", -10.0, 10.0)
+    spread2 = st.number_input("spread2", 0.0, 10.0)
+    D2 = st.number_input("D2", 0.0, 5.0)
+    PPE = st.number_input("PPE", 0.0, 1.0)
 
-    heart_diagnosis = ''
-    if st.button('Heart Disease Test Result'):
-        try:
-            user_input = [float(x) for x in [age, sex, cp, trestbps, chol, fbs,
-                                             restecg, thalach, exang, oldpeak,
-                                             slope, ca, thal]]
-            heart_prediction = heart_disease_model.predict([user_input])
-            heart_diagnosis = 'The person has heart disease' if heart_prediction[0] == 1 else 'The person does not have any heart disease'
-        except:
-            heart_diagnosis = '⚠️ Please enter valid numeric values for all fields.'
-
-    st.success(heart_diagnosis)
-
-# Parkinson's Prediction Page
-elif selected == "Parkinsons Prediction":
-    st.title("Parkinson's Disease Prediction using ML")
-
-    cols = st.columns(5)
-    field_names = [
-        'MDVP:Fo(Hz)', 'MDVP:Fhi(Hz)', 'MDVP:Flo(Hz)', 'MDVP:Jitter(%)',
-        'MDVP:Jitter(Abs)', 'MDVP:RAP', 'MDVP:PPQ', 'Jitter:DDP', 'MDVP:Shimmer',
-        'MDVP:Shimmer(dB)', 'Shimmer:APQ3', 'Shimmer:APQ5', 'MDVP:APQ',
-        'Shimmer:DDA', 'NHR', 'HNR', 'RPDE', 'DFA', 'spread1', 'spread2', 'D2', 'PPE'
-    ]
-    user_inputs = []
-    for i, name in enumerate(field_names):
-        with cols[i % 5]:
-            val = st.text_input(name)
-            user_inputs.append(val)
-
-    parkinsons_diagnosis = ''
-    if st.button("Parkinson's Test Result"):
-        try:
-            user_input = [float(x) for x in user_inputs]
-            parkinsons_prediction = parkinsons_model.predict([user_input])
-            parkinsons_diagnosis = "The person has Parkinson's disease" if parkinsons_prediction[0] == 1 else "The person does not have Parkinson's disease"
-        except:
-            parkinsons_diagnosis = '⚠️ Please enter valid numeric values for all fields.'
-
-    st.success(parkinsons_diagnosis)
-
+    if st.button("Predict Parkinsons"):
+        result = predict_parkinsons([fo, fhi, flo, Jitter_percent, Jitter_Abs, RAP, PPQ, DDP,
+                                     Shimmer, Shimmer_dB, APQ3, APQ5, APQ, DDA, NHR, HNR,
+                                     RPDE, DFA, spread1, spread2, D2, PPE])
+        st.success(f"Prediction: {result}")
